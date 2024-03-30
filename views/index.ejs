@@ -4,29 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nerdflix</title>
-    <style>
-        .button {
-            padding: 1px 6px;
-            border: 1px outset buttonborder;
-            border-radius: 3px;
-            color: black;
-            background-color: lightgray;
-            text-decoration: none;
-        }
-        /* form {
-            float: right;
-        } */
-    </style>
 </head>
 <body>
     <h1>Welcome to Nerdflix!</h1>
     
-    <input type="text" name="title" placeholder="movie title">
+    
     <form action="/search" method="GET">
-        <input type="submit" name="" value="Search" placeholder="search movie">
+        <input type="text" name="title" placeholder="movie title">
+        <input type="submit" value="Search">
     </form>
     <form action="/create" method="POST">
-        <input type="submit" name="" value="Create" placeholder="create movie">
+        <input type="text" name="title" placeholder="movie title">
+        <input type="submit" value="Create">
     </form>
 </body>
 </html>
