@@ -7,8 +7,20 @@
 </head>
 <body>
     <h1>Welcome to Nerdflix!</h1>
-    
-    
+    <% if (locals.found) { %>
+        <% if (found === 1) { %>
+            <h2>Movie <%= title %> found 🎬</h2>
+        <% } else if (found === 2){%>
+            <h2>Movie <%= title %> NOT found ❌</h2>
+        <% } %>
+    <% } %>
+    <% if (locals.liked) { %>
+        <% if (liked === 1) { %>
+            <h2>Movie <%= title %> liked 👍</h2>
+        <% } else if (liked === 2){%>
+            <h2>Movie <%= title %> disliked 👎</h2>
+        <% } %>
+    <% } %>
     <form action="/search" method="GET">
         <input type="text" name="title" placeholder="movie title">
         <input type="submit" value="Search">
@@ -16,6 +28,11 @@
     <form action="/create" method="POST">
         <input type="text" name="title" placeholder="movie title">
         <input type="submit" value="Create">
+    </form>
+    </form>
+    <form action="/like" method="POST">
+        <input type="text" name="title" placeholder="movie title">
+        <input type="submit" value="Like">
     </form>
 </body>
 </html>
