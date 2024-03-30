@@ -21,6 +21,13 @@
             <h2>Movie <%= title %> disliked 👎</h2>
         <% } %>
     <% } %>
+    <% if (locals.added) { %>
+        <% if (added === 1) { %>
+            <h2>Movie <%= title %> created 🎬</h2>
+        <% } else if (added === 2){%>
+            <h2>Movie <%= title %> already exists ❌</h2>
+        <% } %>
+    <% } %>
     <form action="/search" method="GET">
         <input type="text" name="title" placeholder="movie title">
         <input type="submit" value="Search">

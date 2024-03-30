@@ -21,6 +21,23 @@ app.use(express.urlencoded({ extended: true }));
 /**
  * like endpoint. Toggles on/off like flag in data set
  */
+app.post("/create", (req, res) => {
+    let title = req.body.title;
+    console.log(title);
+    if (!(title.toLowerCase() in movies)) {
+        movies[title.toLowerCase()] = false;
+        res.render("index.ejs", { title: title, added: 1 }); 
+    } else {
+        res.render("index.ejs", { title: title, added: 2 }); 
+    }
+    console.log("movies",movies);
+});
+  
+app.use(express.urlencoded({ extended: true }));
+
+/**
+ * like endpoint. Toggles on/off like flag in data set
+ */
 app.post("/like", (req, res) => {
     let title = req.body.title;
     console.log(title);
