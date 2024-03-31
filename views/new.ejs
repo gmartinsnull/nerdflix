@@ -36,6 +36,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        align-content: center;
         height: 100vh;
         font-family: Arial, sans-serif;
         background-color: #f0f0f0;
@@ -52,40 +53,37 @@
         color: white;
         cursor: pointer;
       }
+      .createbtn {
+        text-align: center;
+      }
     </style>
   </head>
   <body>
-    <h1>Welcome to Nerdflix!</h1>
-    <% if (locals.found) { %> 
-        <% if (found === 1) { %>
-            <h2>Movie <%= title %> found 🎬</h2>
-        <% } else if (found === 2) { %>
-            <h2>Movie <%= title %> NOT found ❌</h2>
-        <% } %> 
-    <% } %> <% if (locals.liked) { %> 
-        <% if (liked === 1) { %>
-            <h2>Movie <%= title %> liked 👍</h2>
-        <% } else if (liked === 2) { %>
-            <h2>Movie <%= title %> disliked 👎</h2>
-        <% } %> 
-    <% } %> 
-    <% if (locals.added) { %> 
-        <% if (added === 1) { %>
-            <h2>Movie <%= title %> created 🎬</h2>
-        <% } else if (added === 2) { %>
-            <h2>Movie <%= title %> already exists ❌</h2>
-        <% } %> 
-    <% } %>
-    <form action="/search" method="get">
-        <input type="text" name="title" placeholder="movie title" />
-        <button id="search" type="submit">Search</button>
+    <h1>Create New Movie</h1>
+    <form action="/add" method="post">
+      <div>
+        <input type="text" name="title" placeholder="title" />
+      </div>
+      <div>
+        <input type="text" name="description" placeholder="description" />
+      </div>
+      <div>
+        <input type="number" name="year" placeholder="year" />
+      </div>
+      <div>
+        <input
+          type="number"
+          name="duration"
+          placeholder="duration in minutes"
+        />
+      </div>
+      <div>
+        <input type="number" name="rating" placeholder="rating" />
+      </div>
+      <div class="createbtn">
+        <!-- <input type="submit" name="add" value="new" id="tab"> -->
+        <button id="create" name="create">Create</button>
+      </div>
     </form>
-    <div>
-        <button id="create" onclick="window.location.href='/create'">Create</button>
-        <form action="/like" method="post">
-            <button id="like" type="submit">Like</button>
-        </form>
-        <!-- <button id="like" onclick="window.location.href='/like'">Like</button> -->
-    </div>
   </body>
 </html>
