@@ -11,16 +11,10 @@ const db = new pg.Client({
   port: 5432,
 });
 
+// connects to the database
 db.connect();
 
-// hashmap of movies. Will be replaced with db eventually
-let movies = {
-  "the lord of the rings": false,
-  "the avengers": false,
-  "iron man": false,
-  godzilla: false,
-  dune: false,
-};
+// currently selected movie id
 let currentMovieId = 0;
 
 /**
@@ -28,6 +22,9 @@ let currentMovieId = 0;
  */
 app.use(express.urlencoded({ extended: true }));
 
+/**
+ * get currently selected/search movie from database
+ */
 async function getCurrentMovie() {
   const result = await db.query("SELECT * FROM movies WHERE id = $1", [
     currentMovieId,
@@ -48,14 +45,14 @@ async function getCurrentMovie() {
 /**
  * create endpoint. Takes user to create movie screen/ejs
  */
-app.get("/create", (req, res) => {
+app.get("/new", (req, res) => {
   res.render("new.ejs");
 });
 
 /**
- * create endpoint. Takes user to create movie screen/ejs
+ * add endpoint. Creates new movie record/item in the database and redirects to "/" route
  */
-app.post("/add", async (req, res) => {
+app.post("/create", async (req, res) => {
   console.log("req: ", req.body);
   const title = req.body.title;
   const desc = req.body.description;
@@ -76,7 +73,7 @@ app.post("/add", async (req, res) => {
 });
 
 /**
- * like endpoint. Toggles on/off like flag in data set
+ * like endpoint. Toggles on/off like boolean flag in database
  */
 app.post("/like", async (req, res) => {
   const currentMovie = await getCurrentMovie();
@@ -98,8 +95,25 @@ app.post("/like", async (req, res) => {
   }
 });
 
+app.post("/like/:id", async (req, res) => {
+  const movieId = req.params.id;
+  try {
+    const result = await db.query(
+      "UPDATE movies SET liked = true WHERE id = $1 RETURNING *",
+      [movieId]
+    );
+    console.log("liked: ",result.rows);
+    if (result.rows) {
+      res.sendStatus(200);
+    }
+  } catch (err) {
+    res.status(500);
+  }
+});
+
 /**
- * search endpoint. returns 1 for success and 2 for "not found"
+ * search endpoint. gets movie from the database using title included body in API request.
+ * Returns title and 1 for success and 2 for "not found" to be handled in ejs.
  */
 app.get("/search", async (req, res) => {
   let title = req.query.title;
