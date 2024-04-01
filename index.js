@@ -176,6 +176,20 @@ app.get("/search", async (req, res) => {
   }
 });
 
+app.delete("/movie/:id", async (req, res) => {
+  const movieId = req.params.id;
+  try {
+    const result = await db.query(
+      "DELETE FROM movies WHERE id = $1",
+      [movieId]
+    );
+    console.log("/delete id: ", movieId);
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(404);
+  }
+});
+
 /**
  * home default endpoint. Simply returns index EJS
  */
