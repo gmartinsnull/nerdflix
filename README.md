@@ -16,7 +16,7 @@ The goal of this project is to display how Node when combine with Express JS can
 - Create: Users are able to create a movie that gets saved in a PostGres databse using the POST "/create" endpoint (requires request body with "title" (string), "description" (string), "year" (integer), "duration" in minutes (integer) and 1-5 "rating" (integer))
 - Search: Users are able to search for a movie that has been added in the databse using the GET "/search" endpoint (requires request query param "title" (string))
 - Like: Users are able to like/dislike a movie that has been added in the databse using the POST "/like" or POST "/like/:id" endpoints. The only difference in between them is that, the one which contains "id" as a parameter targets the movie and switches its boolean flag to true, whereas the other toggles it according to the latest searched movie (designed to work on web browser only)
-- Update: Users are able to edit a searched movie that has been added in the databse using the PATCH "/edit" endpoint (requires request body with "id" (integer), "title" (string), "description" (string), "year" (integer), "duration" in minutes (integer) and 1-5 "rating" (integer))
+- Update: Users are able to edit a searched movie that has been added in the databse using the POST "/edit" endpoint (requires request body with "id" (integer), "title" (string), "description" (string), "year" (integer), "duration" in minutes (integer) and 1-5 "rating" (integer)). Note: This should, ideally, be implemented as PATCH but for simplicity it has been set as POST
 - Delete: Users are able to delete a searched movie that has been added in the databse using the DELETE "/delete/:id" endpoint
 
 ## Architecture
