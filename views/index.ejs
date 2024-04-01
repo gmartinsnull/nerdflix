@@ -52,6 +52,11 @@
         color: white;
         cursor: pointer;
       }
+      .buttonContainer {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+      }
     </style>
   </head>
   <body>
@@ -80,11 +85,19 @@
         <input type="text" name="title" placeholder="movie title" />
         <button id="search" type="submit">Search</button>
     </form>
-    <div>
-        <button id="new" onclick="window.location.href='/new'">Create</button>
-        <form action="/like" method="post">
-            <button id="like" type="submit">Like</button>
-        </form>
-    </div>
+    <button id="new" onclick="window.location.href='/new'">Create</button>
+    <% if (locals.found) { %> 
+        <% if (found === 1) { %>
+            <div class="buttonContainer">
+                <form action="/like" method="post">
+                    <button id="like" type="submit">Like</button>
+                </form>
+                <form action="/update" method="get">
+                    <button id="update" type="submit">Edit</button>
+                </form>
+            </div>
+        <% } %>
+    <% } %>
+
   </body>
 </html>

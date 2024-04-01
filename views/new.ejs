@@ -60,28 +60,37 @@
   </head>
   <body>
     <h1>Create New Movie</h1>
-    <form action="/create" method="post">
+    <% if (locals.movie) { %>
+        <form action="/edit" method="post">
+    <% } else { %>
+        <form action="/create" method="post">
+    <% } %>
       <div>
-        <input type="text" name="title" placeholder="title" />
+        <input type="text" name="title" <% if(locals.movie) { %> value="<%= movie.title %>" <% } %> placeholder="title" />
       </div>
       <div>
-        <input type="text" name="description" placeholder="description" />
+        <input type="text" name="description" <% if(locals.movie) { %> value="<%= movie.description %>" <% } %> placeholder="description" />
       </div>
       <div>
-        <input type="number" name="year" placeholder="year" />
+        <input type="number" name="year" <% if(locals.movie){ %> value="<%= movie.year %>" <% } %> placeholder="year" />
       </div>
       <div>
         <input
           type="number"
           name="duration"
+          <% if(locals.movie) { %> value="<%= movie.duration %>" <% } %>
           placeholder="duration in minutes"
         />
       </div>
       <div>
-        <input type="number" name="rating" placeholder="rating" />
+        <input type="number" name="rating" <% if(locals.movie) { %> value="<%= movie.rating %>" <% } %> placeholder="rating" />
       </div>
       <div class="createbtn">
-        <button id="create" name="create">Create</button>
+        <% if(locals.movie) { %>
+            <button id="edit" name="edit">Save</button>
+        <% } else { %>
+            <button id="create" name="create">Create</button>
+        <% } %>
       </div>
     </form>
   </body>

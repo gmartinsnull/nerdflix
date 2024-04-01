@@ -50,6 +50,45 @@ app.get("/new", (req, res) => {
 });
 
 /**
+ * update endpoint. Takes user to edit movie screen/ejs
+ */
+app.get("/update", async (req, res) => {
+  const currentMovie = await getCurrentMovie()
+  console.log("/update: ", currentMovie);
+  res.render("new.ejs", { movie: currentMovie });
+});
+
+/**
+ * add endpoint. Creates new movie record/item in the database and redirects to "/" route
+ */
+app.post("/edit", async (req, res) => {
+  console.log("/edit req: ", req.body);
+  
+  const id = req.body.id || currentMovieId; 
+  const title = req.body.title;
+  const desc = req.body.description;
+  const year = req.body.year;
+  const duration = req.body.duration;
+  const rating = req.body.rating;
+  
+  try {
+    if (title && desc && year && duration && rating && id) {
+      const result = await db.query(
+        "UPDATE movies SET title = $1, description = $2, year = $3, duration = $4, rating = $5 WHERE id = $6",
+        [title, desc, year, duration, rating, id]
+      );
+      res.render("index.ejs", { title: title, found: 1 });
+      res.status(200);
+    } else {
+      res.status(404);
+    }
+  } catch (err) {
+    res.status(404);
+  }
+  
+});
+
+/**
  * add endpoint. Creates new movie record/item in the database and redirects to "/" route
  */
 app.post("/create", async (req, res) => {
@@ -67,7 +106,7 @@ app.post("/create", async (req, res) => {
     );
     res.status(201);
   } else {
-    res.status(400);
+    res.status(500);
   }
   res.redirect("/");
 });
@@ -86,9 +125,9 @@ app.post("/like", async (req, res) => {
     console.log("movie liked: ", result.rows[0]);
     const liked = result.rows[0].liked;
     if (liked) {
-      res.render("index.ejs", { title: currentMovie.title, liked: 1 });
+      res.render("index.ejs", { title: currentMovie.title, found: 1, liked: 1 });
     } else {
-      res.render("index.ejs", { title: currentMovie.title, liked: 2 });
+      res.render("index.ejs", { title: currentMovie.title, found: 1, liked: 2 });
     }
   } catch (err) {
     res.status(500);
