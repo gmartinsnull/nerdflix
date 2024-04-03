@@ -26,20 +26,26 @@ app.use(express.urlencoded({ extended: true }));
  * get currently selected/search movie from database
  */
 async function getCurrentMovie() {
-  const result = await db.query("SELECT * FROM movies WHERE id = $1", [
-    currentMovieId,
-  ]);
-  const movie = result.rows[0];
-  const currentMovie = {
-    id: movie.id,
-    title: movie.title,
-    description: movie.description,
-    year: movie.year,
-    duration: movie.duration,
-    rating: movie.rating,
-    liked: movie.liked,
-  };
-  return currentMovie;
+  console.log("currentMovieId: ", currentMovieId);
+  if (currentMovieId > 0) {
+    const result = await db.query("SELECT * FROM movies WHERE id = $1", [
+      currentMovieId,
+    ]);
+    const movie = result.rows[0];
+    const currentMovie = {
+      id: movie.id,
+      title: movie.title,
+      description: movie.description,
+      year: movie.year,
+      duration: movie.duration,
+      rating: movie.rating,
+      liked: movie.liked,
+    };
+    return currentMovie;
+  } else {
+    currentMovieId = 0; 
+    return null;
+  }
 }
 
 /**
@@ -59,7 +65,7 @@ app.get("/update", async (req, res) => {
 });
 
 /**
- * add endpoint. Creates new movie record/item in the database and redirects to "/" route
+ * /edit endpoint. Edits the current movie record/item in the database 
  */
 app.post("/edit", async (req, res) => {
   console.log("/edit req: ", req.body);
@@ -89,7 +95,7 @@ app.post("/edit", async (req, res) => {
 });
 
 /**
- * add endpoint. Creates new movie record/item in the database and redirects to "/" route
+ * /create endpoint. Creates new movie record/item in the database and redirects to "/" route
  */
 app.post("/create", async (req, res) => {
   console.log("req: ", req.body);
@@ -112,17 +118,17 @@ app.post("/create", async (req, res) => {
 });
 
 /**
- * like endpoint. Toggles on/off like boolean flag in database
+ * /like endpoint. Toggles on/off like boolean flag in database
  */
 app.post("/like", async (req, res) => {
   const currentMovie = await getCurrentMovie();
-  console.log("current: ", currentMovie);
+  console.log("/like currentMovie: ", currentMovie);
   try {
     const result = await db.query(
       "UPDATE movies SET liked = NOT $1 WHERE id = $2 RETURNING *",
       [currentMovie.liked, currentMovie.id]
     );
-    console.log("movie liked: ", result.rows[0]);
+    console.log("/liked result: ", result.rows[0]);
     const liked = result.rows[0].liked;
     if (liked) {
       res.render("index.ejs", { title: currentMovie.title, found: 1, liked: 1 });
@@ -134,6 +140,9 @@ app.post("/like", async (req, res) => {
   }
 });
 
+/**
+ * /like/:id endpoint with id as param. Toggles on/off like boolean flag in database
+ */
 app.post("/like/:id", async (req, res) => {
   const movieId = req.params.id;
   try {
@@ -141,7 +150,7 @@ app.post("/like/:id", async (req, res) => {
       "UPDATE movies SET liked = true WHERE id = $1 RETURNING *",
       [movieId]
     );
-    console.log("liked: ",result.rows);
+    console.log("/liked result:",result.rows);
     if (result.rows) {
       res.sendStatus(200);
     }
@@ -156,7 +165,7 @@ app.post("/like/:id", async (req, res) => {
  */
 app.get("/search", async (req, res) => {
   let title = req.query.title;
-  console.log("title: ", title);
+  console.log("/search req: ", title);
   try {
     const result = await db.query(
       "SELECT * FROM movies WHERE LOWER(title) LIKE '%' || $1 || '%';",
