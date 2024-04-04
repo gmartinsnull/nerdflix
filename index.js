@@ -1,18 +1,22 @@
 import express from "express";
-import pg from "pg";
+import pg from 'pg';
 
 const app = express();
 const port = 3000;
-const db = new pg.Client({
+const pool = new pg.Pool({
   database: "movies",
   host: "localhost",
   user: "postgres",
   password: "admin",
   port: 5432,
+  max: 5,
+  connectionTimeoutMillis: 20000,
+  idleTimeoutMillis: 20000,
+  allowExitOnIdle: false
 });
 
 // connects to the database
-db.connect();
+pool.connect();
 
 // currently selected movie id
 let currentMovieId = 0;
@@ -28,7 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 async function getCurrentMovie() {
   console.log("currentMovieId: ", currentMovieId);
   if (currentMovieId > 0) {
-    const result = await db.query("SELECT * FROM movies WHERE id = $1", [
+    const result = await pool.query("SELECT * FROM movies WHERE id = $1", [
       currentMovieId,
     ]);
     const movie = result.rows[0];
@@ -79,7 +83,7 @@ app.post("/edit", async (req, res) => {
   
   try {
     if (title && desc && year && duration && rating && id) {
-      const result = await db.query(
+      const result = await pool.query(
         "UPDATE movies SET title = $1, description = $2, year = $3, duration = $4, rating = $5 WHERE id = $6",
         [title, desc, year, duration, rating, id]
       );
@@ -106,7 +110,7 @@ app.post("/create", async (req, res) => {
   const rating = req.body.rating;
 
   if (title && desc && year && duration && rating) {
-    const result = await db.query(
+    const result = await pool.query(
       "INSERT INTO movies (title, description, year, duration, rating, liked) VALUES ($1, $2, $3, $4, $5, false)",
       [title, desc, year, duration, rating]
     );
@@ -124,7 +128,7 @@ app.post("/like", async (req, res) => {
   const currentMovie = await getCurrentMovie();
   console.log("/like currentMovie: ", currentMovie);
   try {
-    const result = await db.query(
+    const result = await pool.query(
       "UPDATE movies SET liked = NOT $1 WHERE id = $2 RETURNING *",
       [currentMovie.liked, currentMovie.id]
     );
@@ -146,7 +150,7 @@ app.post("/like", async (req, res) => {
 app.post("/like/:id", async (req, res) => {
   const movieId = req.params.id;
   try {
-    const result = await db.query(
+    const result = await pool.query(
       "UPDATE movies SET liked = true WHERE id = $1 RETURNING *",
       [movieId]
     );
@@ -167,7 +171,7 @@ app.get("/search", async (req, res) => {
   let title = req.query.title;
   console.log("/search req: ", title);
   try {
-    const result = await db.query(
+    const result = await pool.query(
       "SELECT * FROM movies WHERE LOWER(title) LIKE '%' || $1 || '%';",
       [title.toLowerCase().trim()]
     );
@@ -188,7 +192,7 @@ app.get("/search", async (req, res) => {
 app.delete("/movie/:id", async (req, res) => {
   const movieId = req.params.id;
   try {
-    const result = await db.query(
+    const result = await pool.query(
       "DELETE FROM movies WHERE id = $1",
       [movieId]
     );
