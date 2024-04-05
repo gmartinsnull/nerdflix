@@ -11,4 +11,4 @@ services:
   app:
     image: nerdflix-app
     ports:
-      - 6000:3000
+      - 3033:3000
