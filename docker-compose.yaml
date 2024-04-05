@@ -1,0 +1,14 @@
+version: "3.8"
+services: 
+  database:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: postgres
+      POSTGRES_DB: movies
+    ports:
+      - 6543:5432
+  app:
+    image: nerdflix-app
+    ports:
+      - 6000:3000

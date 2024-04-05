@@ -1,22 +1,65 @@
 import express from "express";
-import pg from 'pg';
+import pool from "./db.js";
 
 const app = express();
 const port = 3000;
-const pool = new pg.Pool({
-  database: "movies",
-  host: "localhost",
-  user: "postgres",
-  password: "admin",
-  port: 5432,
-  max: 5,
-  connectionTimeoutMillis: 20000,
-  idleTimeoutMillis: 20000,
-  allowExitOnIdle: false
-});
 
-// connects to the database
-pool.connect();
+/**
+ * function to establish a connection to the database
+ */
+async function connectToDatabase() {
+  try {
+    // attemp to connect to the database
+    await pool.connect();
+    console.log("connected to the database successfully");
+    return true;
+  } catch (err) {
+    console.error("failed to connect to the database: ", err.message);
+    return false;
+  } 
+}
+
+const maxRetries = 5;
+const retryInterval = 3000;
+
+/**
+ * function to perform health check with retry mechanism
+ */
+async function performHealthCheck(maxRetries, retryInterval) {
+  let retries = 0;
+  while (retries < maxRetries) {
+    console.log(`attempting to connect to the database. Retry ${retries + 1}/${maxRetries}...`);
+
+    // attempt to connect to the db
+    const connected = await connectToDatabase();
+
+    if (connected) {
+      console.log("health check successful. Database is available");
+      return true;
+    }
+
+    // wait for the specified retry retryInterval before the next attemp
+    await new Promise(resolve => setTimeout(resolve, retryInterval));
+    retries++;
+  }
+
+  console.log("maximum number of retries reached. Health check failed.");
+  return false;
+}
+
+performHealthCheck(maxRetries, retryInterval)
+  .then(healthCheckResult => {
+    if(healthCheckResult) {
+      // database is available, start your application
+    } else {
+      // handle error or exit application if db is not available
+      process.exit(1);
+    }
+  })
+  .catch(error => {
+    console.error("an error occurred during health check: ", error);
+    process.exit(1);
+  });
 
 // currently selected movie id
 let currentMovieId = 0;
@@ -186,6 +229,7 @@ app.get("/search", async (req, res) => {
   } catch (err) {
     res.render("index.ejs", { title: title, found: 2 });
     res.status(404);
+    console.log("/search error: ", err);
   }
 });
 
@@ -206,7 +250,16 @@ app.delete("/movie/:id", async (req, res) => {
 /**
  * home default endpoint. Simply returns index EJS
  */
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
+  await pool.query("CREATE TABLE IF NOT EXISTS movies (\
+    id SERIAL PRIMARY KEY,\
+    title VARCHAR(200),\
+    description TEXT,\
+    year INTEGER,\
+    duration INTEGER,\
+    rating INTEGER,\
+    liked BOOLEAN\
+  );")
   res.render("index.ejs");
 });
 
