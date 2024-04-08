@@ -1,5 +1,5 @@
 import express from "express";
-import pg from 'pg';
+import pg from "pg";
 
 const app = express();
 const port = 3000;
@@ -12,14 +12,11 @@ const pool = new pg.Pool({
   max: 5,
   connectionTimeoutMillis: 20000,
   idleTimeoutMillis: 20000,
-  allowExitOnIdle: false
+  allowExitOnIdle: false,
 });
 
 // connects to the database
 pool.connect();
-
-// currently selected movie id
-let currentMovieId = 0;
 
 /**
  * http body decoder
@@ -27,79 +24,37 @@ let currentMovieId = 0;
 app.use(express.urlencoded({ extended: true }));
 
 /**
- * get currently selected/search movie from database
+ * /edit endpoint. Edits the current movie record/item in the database with given data in request body
  */
-async function getCurrentMovie() {
-  console.log("currentMovieId: ", currentMovieId);
-  if (currentMovieId > 0) {
-    const result = await pool.query("SELECT * FROM movies WHERE id = $1", [
-      currentMovieId,
-    ]);
-    const movie = result.rows[0];
-    const currentMovie = {
-      id: movie.id,
-      title: movie.title,
-      description: movie.description,
-      year: movie.year,
-      duration: movie.duration,
-      rating: movie.rating,
-      liked: movie.liked,
-    };
-    return currentMovie;
-  } else {
-    currentMovieId = 0; 
-    return null;
-  }
-}
-
-/**
- * create endpoint. Takes user to create movie screen/ejs
- */
-app.get("/new", (req, res) => {
-  res.render("new.ejs");
-});
-
-/**
- * update endpoint. Takes user to edit movie screen/ejs
- */
-app.get("/update", async (req, res) => {
-  const currentMovie = await getCurrentMovie()
-  console.log("/update: ", currentMovie);
-  res.render("new.ejs", { movie: currentMovie });
-});
-
-/**
- * /edit endpoint. Edits the current movie record/item in the database 
- */
-app.post("/edit", async (req, res) => {
+app.patch("/edit", async (req, res) => {
   console.log("/edit req: ", req.body);
-  
-  const id = req.body.id || currentMovieId; 
+
+  const id = req.body.id;
   const title = req.body.title;
   const desc = req.body.description;
   const year = req.body.year;
   const duration = req.body.duration;
   const rating = req.body.rating;
-  
+
   try {
     if (title && desc && year && duration && rating && id) {
       const result = await pool.query(
         "UPDATE movies SET title = $1, description = $2, year = $3, duration = $4, rating = $5 WHERE id = $6",
         [title, desc, year, duration, rating, id]
       );
-      res.render("index.ejs", { title: title, found: 1 });
-      res.status(200);
+      res.sendStatus(200);
     } else {
-      res.status(404);
+      res
+        .status(404)
+        .json({ message: "movie not found with given data in request body" });
     }
   } catch (err) {
-    res.status(404);
+    res.status(500).json({ error: err });
   }
-  
 });
 
 /**
- * /create endpoint. Creates new movie record/item in the database and redirects to "/" route
+ * /create endpoint. Creates new movie record/item in the database
  */
 app.post("/create", async (req, res) => {
   console.log("req: ", req.body);
@@ -110,37 +65,19 @@ app.post("/create", async (req, res) => {
   const rating = req.body.rating;
 
   if (title && desc && year && duration && rating) {
-    const result = await pool.query(
-      "INSERT INTO movies (title, description, year, duration, rating, liked) VALUES ($1, $2, $3, $4, $5, false)",
-      [title, desc, year, duration, rating]
-    );
-    res.status(201);
-  } else {
-    res.status(500);
-  }
-  res.redirect("/");
-});
-
-/**
- * /like endpoint. Toggles on/off like boolean flag in database
- */
-app.post("/like", async (req, res) => {
-  const currentMovie = await getCurrentMovie();
-  console.log("/like currentMovie: ", currentMovie);
-  try {
-    const result = await pool.query(
-      "UPDATE movies SET liked = NOT $1 WHERE id = $2 RETURNING *",
-      [currentMovie.liked, currentMovie.id]
-    );
-    console.log("/liked result: ", result.rows[0]);
-    const liked = result.rows[0].liked;
-    if (liked) {
-      res.render("index.ejs", { title: currentMovie.title, found: 1, liked: 1 });
-    } else {
-      res.render("index.ejs", { title: currentMovie.title, found: 1, liked: 2 });
+    try {
+      const result = await pool.query(
+        "INSERT INTO movies (title, description, year, duration, rating, liked) VALUES ($1, $2, $3, $4, $5, false)",
+        [title, desc, year, duration, rating]
+      );
+      res.sendStatus(201);
+    } catch (error) {
+      res.status(500).json({ error: error });
     }
-  } catch (err) {
-    res.status(500);
+  } else {
+    res
+      .status(500)
+      .json({ message: "movie attribute missing in request body" });
   }
 });
 
@@ -151,21 +88,24 @@ app.post("/like/:id", async (req, res) => {
   const movieId = req.params.id;
   try {
     const result = await pool.query(
-      "UPDATE movies SET liked = true WHERE id = $1 RETURNING *",
+      "UPDATE movies SET liked = false WHERE id = $1 RETURNING *",
       [movieId]
     );
-    console.log("/liked result:",result.rows);
-    if (result.rows) {
+    const likedMovie = result.rows[0];
+    console.log("/liked result:", likedMovie);
+    if (likedMovie) {
       res.sendStatus(200);
+    } else {
+      res.status(404).json({ message: "movie not found by given id" });
     }
   } catch (err) {
-    res.status(500);
+    res.status(500).json({ error: err });
   }
 });
 
 /**
  * search endpoint. gets movie from the database using title included body in API request.
- * Returns title and 1 for success and 2 for "not found" to be handled in ejs.
+ * returns JSON containing movie data retrieved from the database
  */
 app.get("/search", async (req, res) => {
   let title = req.query.title;
@@ -176,38 +116,39 @@ app.get("/search", async (req, res) => {
       [title.toLowerCase().trim()]
     );
     const movie = result.rows[0];
-    console.log("movie: ", movie);
-    if (movie) {
-      currentMovieId = movie.id;
-      res.render("index.ejs", { title: movie.title, found: 1 });
+    const data = {
+      id: movie.id,
+      title: movie.title,
+      description: movie.description,
+      rating: movie.rating,
+      year: movie.year,
+      liked: movie.liked,
+    };
+    console.log("movie data: ", data);
+    if (data) {
+      res.status(200).json({ movie: data });
     } else {
-      res.render("index.ejs", { title: movie.title, found: 2 });
+      res.status(404).json({ message: "movie data not found in the database" });
     }
   } catch (err) {
-    res.render("index.ejs", { title: title, found: 2 });
-    res.status(404);
-  }
-});
-
-app.delete("/movie/:id", async (req, res) => {
-  const movieId = req.params.id;
-  try {
-    const result = await pool.query(
-      "DELETE FROM movies WHERE id = $1",
-      [movieId]
-    );
-    console.log("/delete id: ", movieId);
-    res.sendStatus(200);
-  } catch (err) {
-    res.status(404);
+    res.status(500).json({ error: err });
   }
 });
 
 /**
- * home default endpoint. Simply returns index EJS
+ * delete API responsible for deleting movie item from database based on given movie id in request param
  */
-app.get("/", (req, res) => {
-  res.render("index.ejs");
+app.delete("/movie/:id", async (req, res) => {
+  const movieId = req.params.id;
+  try {
+    const result = await pool.query("DELETE FROM movies WHERE id = $1", [
+      movieId,
+    ]);
+    console.log("/delete id: ", movieId);
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(404).json({ error: err });
+  }
 });
 
 /**
